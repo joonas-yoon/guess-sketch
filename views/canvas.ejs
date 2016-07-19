@@ -1,0 +1,312 @@
+<!doctype html>
+<html>
+<head>
+	<title>Paint</title>
+	
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	
+	<script src="/static/js/jquery-3.1.0.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+	
+	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+		<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+		<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+	<![endif]-->
+
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css" />
+	<link rel="stylesheet" href="/static/farbtastic/farbtastic.css" />
+	<script src="/static/farbtastic/farbtastic.js"></script>
+	
+	<link rel="stylesheet" href="/static/font-awesome-4.6.3/css/font-awesome.min.css">
+	<link href="/static/bootflat-2.0.4/css/bootstrap.min.css" rel="stylesheet" media="screen" />
+	<script src="/static/bootflat-2.0.4/js/bootstrap.min.js"></script>
+
+	<style>
+		html, body {
+			padding: 0;
+			margin: 0;
+		}
+		.canvas-container {
+			background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAARCAMAAAA11AaTAAAAD1BMVEUAAADp6enp6enp6en///8uyUgXAAAAA3RSTlMAVamSsHaDAAAAFklEQVQY02NgZmZAAUxMqHxGRoaRBAANPgANgJAOfgAAAABJRU5ErkJggg==);
+		}
+		canvas {
+			margin:0 auto;
+			padding:0;
+			overflow:hidden;
+			height:100%;
+			min-height:100%;
+			cursor: crosshair;
+			/*border:1px solid #ccc;*/
+			background: transparent;
+		}
+
+		div#preloader {
+			color: #fff;
+			width: 100%;
+			display: block;
+			z-index: 99999;
+			height: 100%;
+			min-height: 100%;
+			background: #000;
+			position: absolute;
+			text-align: center;
+			padding: 2em;
+			margin: 0;
+			opacity: 0.6;
+			font-size: 3em;
+		}
+		
+		div.chatWrapper {
+			display: block;
+			position: fixed;
+			bottom: 0;
+			padding: 5px 10px;
+			pointer-events:none;
+			color: #000;
+			background-color: rgba(255,255,255,.75);
+			z-index: 9876;
+			opacity: 0.95;
+		}
+		
+		#navigator {
+			border-bottom: 1px solid #ccc;
+		}
+		
+		.nav-pills {
+			padding-top: 5px;
+			padding-bottom: 5px;
+		}
+		.nav-pills>li>a {
+			padding: 8px;
+			margin-right: 5px;
+			border-radius: 50%;
+		}
+	</style>
+	
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript">
+	
+		function resizeCanvas(canvas, socket){
+			var offset = 10;
+			canvas.width = window.innerWidth - offset;
+			canvas.height = window.innerHeight - $("#navigator").height() - offset;
+			socket.emit('restore state', undefined);
+		}
+		
+		$(document).ready(function(){
+			var canvas = document.getElementById('canvas');
+			var context = canvas.getContext('2d');
+			
+			var socket = io.connect();
+			socket.emit('join', '<%= room %>');
+			socket.on('connected', function(username){
+				setTimeout(function(){
+					$("#preloader").fadeOut();
+				}, 100);
+				$("#chatUsername")[0].innerText = username;
+			});
+			
+			resizeCanvas(canvas, socket);
+			// 화면 크기가 변경되면 크기에 맞게 캔버스를 맞춤
+			$( window ).resize(function(){
+				resizeCanvas(canvas, socket);
+			});
+			
+			// 서버에서 그림이 변경된다면 받아온다.
+			socket.on('render canvas', function(image){
+				var img = new Image();
+				img.src = image;
+				img.onload = function() {
+					context.clearRect(0, 0, canvas.width, canvas.height);
+					context.drawImage(img, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);  
+				};
+			});
+			
+			// 오류 처리
+			socket.on('error message', function(message){
+				document.getElementById('preloader').innerHTML = message;
+				$("#preloader").fadeIn();
+			});
+			
+			var pencil = {
+				options: {
+					stroke_color: '#000000',
+					width: 5,
+					dim: 4
+				},
+				init: function(canvas, ctx) {
+					this.canvas = canvas;
+					this.canvas_coords = $(this.canvas).position();
+					this.ctx = ctx;
+					this.ctx.strokeStyle = this.options.stroke_color;
+					this.ctx.lineCap = "round";
+					this.ctx.lineWidth = this.options.width;
+					this.drawing = false;
+					this.addCanvasEvents();
+				},
+				addCanvasEvents: function() {
+					this.canvas.addEventListener('mousedown', this.start.bind(this));
+					this.canvas.addEventListener('mousemove', this.stroke.bind(this));
+					this.canvas.addEventListener('mouseup', this.stop.bind(this));
+					this.canvas.addEventListener('mouseout', this.stop.bind(this));
+					
+					this.canvas.addEventListener('touchstart', this.start.bind(this));
+					this.canvas.addEventListener('touchmove', this.stroke.bind(this));
+					this.canvas.addEventListener('touchend', this.stop.bind(this));
+					this.canvas.addEventListener('touchcancel', this.stop.bind(this));
+				},
+				start: function(evt) {
+					if(evt.touches) evt = evt.changedTouches[0];
+					var x = evt.pageX - this.canvas_coords.left;
+					var y = evt.pageY - this.canvas_coords.top;
+					this.options.startPoint = {x: x, y: y};
+					this.drawing = true;
+				},
+				stroke: function(evt) {
+					if(this.drawing) {
+						if(evt.touches) evt = evt.changedTouches[0];
+						var x = evt.pageX - this.canvas_coords.left;
+						var y = evt.pageY - this.canvas_coords.top;
+						this.options.endPoint = {x: x, y: y};
+						socket.emit('send line', this.options);
+						this.options.startPoint = this.options.endPoint;
+					}
+				},
+				draw: function(options){
+					this.ctx.lineWidth = options.width;
+					this.ctx.strokeStyle = options.stroke_color;
+					this.ctx.beginPath();
+					this.ctx.moveTo(options.startPoint.x, options.startPoint.y);
+					this.ctx.lineTo(options.endPoint.x, options.endPoint.y);
+					this.ctx.stroke();
+				},
+				stop: function(evt) {
+					if(this.drawing) this.drawing = false;
+					socket.emit('save canvas', canvas.toDataURL());
+				}
+			};
+			
+			pencil.init(canvas, context);
+			
+			socket.on('draw line', function(data){
+				pencil.draw(data);
+			});
+			
+			$('#colorpicker').farbtastic(function(data){
+				pencil.options.stroke_color = data;
+			});
+			
+			$('#slider').slider({
+				max:20, min:1,
+				value: 5,
+				change: function(event, ui){
+					pencil.options.width = ui.value;
+				}
+			});
+			
+			
+			/////////////// Chat /////////////////
+			var messages = document.getElementById('messageLog');
+			var messageInput = document.getElementById('chatMsg');
+			var lastMessage = null;
+			function createUsername(name){
+				var img = document.createElement('img');
+				img.class = "events-object img-rounded";
+				img.style = "width:20px;"
+				img.src = "https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg";
+				return img.outerHTML + '&nbsp;<b>' + name + '</b>';
+			}
+			// 채팅창에 메시지를 추가한다. 메시지가 10개 이상 초과하면 오랜된 순으로 지워진다.
+			function pushMessage(message){
+				messages.appendChild(message, lastMessage);
+				lastMessage = message;
+				setTimeout(function(){
+					$(message).fadeOut(300, function(){ $(this).remove(); });
+				}, 4000);
+			}
+			function sendMessage(nick, message){
+				var newMessage = document.createElement('div');
+				newMessage.className = 'message';
+				var newMessageTxt = document.createTextNode(message);
+				newMessage.insertAdjacentHTML( 'beforeend', createUsername(nick) + ': ' + newMessageTxt.wholeText );
+				pushMessage(newMessage);
+			};
+			socket.on('recvMessage', function(nick, content){
+				sendMessage(nick, content);
+			});
+			$("#chatMsg").keydown(function(evt){
+				if(evt.which == 13 /* return key */){
+					evt.preventDefault();
+					socket.emit('sendMessage', this.value);
+					this.value = '';
+					return false;
+				}
+				return true;
+			});
+			$("button[data-type=send]").click(sendMessage).on("tap",sendMessage);
+			
+			//////// 유저 리스트 ////////
+			function updateUserlist(){
+				$.getJSON('/room/<%= room %>/users', function(data){
+					var userlist = $("#userlist");
+					userlist.html(''); // clear
+					$.each(data, function (index, item){
+						var u = $('<a href="#"></a>')
+							.attr({class: 'dropdown-toggle', 'data-toggle':'dropdown'})
+							.html('<img src="https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg" class="img-rounded" style="width: 20px;" />');
+						var li = $('<li class="dropdown"></li>').attr({
+							'data-user': item
+						}).html(u).append('<ul class="dropdown-menu"><li><a href="#">@' + item + '</a></li></ul>').appendTo(userlist);
+						
+						if(item == $("#chatUsername")[0].innerText) li.addClass('active');
+					});
+				});
+			};
+			socket.on('update userlist', updateUserlist);
+		});
+	</script>
+</head>
+<body>
+	<div id="navigator" class="row" style="margin:0;">
+		<div class="col-md-12">
+			<ul class="nav nav-pills" id="userlist">
+				<li class="dropdown">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown" style="padding:10px"><div style="width:20px;height: 20px;"><i class="fa fa-spinner fa-spin"></i></div></a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div id="preloader">
+		<i class='fa fa-spinner fa-spin'></i> Loading...
+	</div>
+	<div class="canvas-container">
+		<canvas id="canvas"></canvas>
+	</div>
+	<div class="chatWrapper">
+		<div class="log" id="messageLog"></div>
+		<hr style="margin: 10px auto"/>
+		<div class="row" style="pointer-events:all !important;">
+			<div class="col-md-12">
+				<div class="input-group">
+					<span class="input-group-addon" id="chatUsername">username</span>
+					<input type="text" class="form-control" id="chatMsg">
+					<span class="input-group-btn">
+						<button type="submit" class="btn btn-primary" data-type="send">보내기</button>
+					</span>
+				</div>
+			</div>
+		</div><!-- /row -->
+	</div>
+	<div style="display:none;">
+		<form>
+			<input type="text" id="color" name="color" value="#123456" />
+		</form>
+		<div id="colorpicker"></div>
+		<div id="slider"></div>
+	</div>
+</body>
+</html>

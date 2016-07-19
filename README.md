@@ -27,4 +27,4 @@ To watch some training videos, visit http://www.youtube.com/user/c9ide
 
 ## Links
 
-http://bcho.tistory.com/899# guess-sketch
+http://bcho.tistory.com/899

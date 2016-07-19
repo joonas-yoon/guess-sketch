@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+	<title>Lobby</title>
+	<script src="/static/js/jquery-3.1.0.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			// AJAX
+			$.getJSON('/room', function(data){
+				$.each(data, function (index, item){
+					var btn = $('<button></button>').attr({
+						'data-room': item.id
+					}).text('Room number: ' + item.id).appendTo('#container');
+					btn.on('click', function(){
+						var room = $(this).attr('data-room');
+						location.href = '/canvas/' + room;
+					});
+				});
+			});
+			
+			var socket = io.connect('https://paint-joonas-yoon.c9users.io/');
+			socket.on('addroom', function(data){
+				var btn = $('<button></button>').attr({
+					'data-room': data
+				}).text('Room number: ' + data).appendTo('#container');
+				btn.on('click', function(){
+					var room = $(this).attr('data-room');
+					location.href = '/canvas/' + room;
+				});
+			});
+			
+			// 이벤트 연결
+			$('body > button').click(function(){
+				var room = $('#room').val();
+				socket.emit('addroom', room);
+				location = '/canvas/' + room;
+			});
+		});
+	</script>
+</head>
+<body>
+	<h1>Rint Real Time Canvas</h1>
+	<span>ROOM: </span>
+	<input type="text" id="room"/>
+	<button>Create Room</button>
+	<hr/>
+	<div id="container">
+	
+	</div>
+</body>
+</html>
