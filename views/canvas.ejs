@@ -50,7 +50,8 @@
 				$("#chatUsername")[0].innerText = username;
 			});
 			
-			resizeCanvas(canvas, socket);
+			// 크기를 나중에 변경하여 네비게이션이 밀리는 일이 없도록 함
+			setTimeout(function(){resizeCanvas(canvas, socket)}, 500);
 			// 화면 크기가 변경되면 크기에 맞게 캔버스를 맞춤
 			$( window ).resize(function(){
 				resizeCanvas(canvas, socket);
@@ -155,17 +156,15 @@
 			var lastMessage = null;
 			function createUsername(name){
 				var img = document.createElement('img');
-				img.class = "events-object img-rounded";
-				img.style = "width:20px;"
+				img.className = "events-object img-rounded img-sm";
 				img.src = "https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg";
 				return img.outerHTML + '&nbsp;<b>' + name + '</b>';
 			}
-			// 채팅창에 메시지를 추가한다. 메시지가 10개 이상 초과하면 오랜된 순으로 지워진다.
 			function pushMessage(message){
 				messages.appendChild(message, lastMessage);
 				lastMessage = message;
 				setTimeout(function(){
-					$(message).fadeOut(300, function(){ $(this).remove(); });
+					// $(message).fadeOut(300, function(){ $(this).remove(); });
 				}, 4000);
 			}
 			function sendMessage(nick, message){
@@ -197,12 +196,16 @@
 					$.each(data, function (index, item){
 						var u = $('<a href="#"></a>')
 							.attr({class: 'dropdown-toggle', 'data-toggle':'dropdown'})
-							.html('<img src="https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg" class="img-rounded" style="width: 20px;" />');
+							.html('<img src="https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg" class="img-rounded img-sm" />');
 						var li = $('<li class="dropdown"></li>').attr({
-							'data-user': item
-						}).html(u).append('<ul class="dropdown-menu"><li><a href="#">@' + item + '</a></li></ul>').appendTo(userlist);
+							'data-user': item.id
+						}).html(u).append('<ul class="dropdown-menu"><li><a href="#">@' + item.id + '</a></li></ul>').appendTo(userlist);
 						
-						if(item == $("#chatUsername")[0].innerText) li.addClass('active');
+						if(item.id == $("#chatUsername")[0].innerText) li.addClass('active');
+						if(item.drawer === true){
+							li.addClass('drawing');
+							u.attr({'data-draw': 'true'}).tooltip({title:'그림',placement:'bottom',trigger:'hover'}).tooltip('show');
+						}
 					});
 				});
 			};

@@ -15,7 +15,11 @@ canvas {
 	/*border:1px solid #ccc;*/
 	background: transparent;
 }
-
+.img-sm,
+.log img,
+.dropdown>a>img {
+	width: 20px;
+}
 div#preloader {
 	color: #fff;
 	width: 100%;
@@ -56,4 +60,9 @@ div.chatWrapper {
 	padding: 8px;
 	margin-right: 5px;
 	border-radius: 50%;
+	transition: background-color 0.5s ease-in-out;
+}
+.nav-pills>li.drawing>a {
+	color: #fff;
+	background-color: #ED5565;
 }
