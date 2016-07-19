@@ -7,7 +7,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 	
-	<script src="/static/js/jquery-3.1.0.min.js"></script>
+	<script src="/dist/js/jquery-3.1.0.min.js"></script>
 	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
 	
 	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -18,74 +18,14 @@
 	<![endif]-->
 
 	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css" />
-	<link rel="stylesheet" href="/static/farbtastic/farbtastic.css" />
-	<script src="/static/farbtastic/farbtastic.js"></script>
+	<link rel="stylesheet" href="/dist/farbtastic/farbtastic.css" />
+	<script src="/dist/farbtastic/farbtastic.js"></script>
 	
-	<link rel="stylesheet" href="/static/font-awesome-4.6.3/css/font-awesome.min.css">
-	<link href="/static/bootflat-2.0.4/css/bootstrap.min.css" rel="stylesheet" media="screen" />
-	<script src="/static/bootflat-2.0.4/js/bootstrap.min.js"></script>
-
-	<style>
-		html, body {
-			padding: 0;
-			margin: 0;
-		}
-		.canvas-container {
-			background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAARCAMAAAA11AaTAAAAD1BMVEUAAADp6enp6enp6en///8uyUgXAAAAA3RSTlMAVamSsHaDAAAAFklEQVQY02NgZmZAAUxMqHxGRoaRBAANPgANgJAOfgAAAABJRU5ErkJggg==);
-		}
-		canvas {
-			margin:0 auto;
-			padding:0;
-			overflow:hidden;
-			height:100%;
-			min-height:100%;
-			cursor: crosshair;
-			/*border:1px solid #ccc;*/
-			background: transparent;
-		}
-
-		div#preloader {
-			color: #fff;
-			width: 100%;
-			display: block;
-			z-index: 99999;
-			height: 100%;
-			min-height: 100%;
-			background: #000;
-			position: absolute;
-			text-align: center;
-			padding: 2em;
-			margin: 0;
-			opacity: 0.6;
-			font-size: 3em;
-		}
-		
-		div.chatWrapper {
-			display: block;
-			position: fixed;
-			bottom: 0;
-			padding: 5px 10px;
-			pointer-events:none;
-			color: #000;
-			background-color: rgba(255,255,255,.75);
-			z-index: 9876;
-			opacity: 0.95;
-		}
-		
-		#navigator {
-			border-bottom: 1px solid #ccc;
-		}
-		
-		.nav-pills {
-			padding-top: 5px;
-			padding-bottom: 5px;
-		}
-		.nav-pills>li>a {
-			padding: 8px;
-			margin-right: 5px;
-			border-radius: 50%;
-		}
-	</style>
+	<link rel="stylesheet" href="/dist/font-awesome-4.6.3/css/font-awesome.min.css" />
+	<link href="/dist/bootflat-2.0.4/css/bootstrap.min.css" rel="stylesheet" media="screen" />
+	<script src="/dist/bootflat-2.0.4/js/bootstrap.min.js"></script>
+	
+	<link rel="stylesheet" href="/public/style.css" />
 	
 	<script src="/socket.io/socket.io.js"></script>
 	<script type="text/javascript">

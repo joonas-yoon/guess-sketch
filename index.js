@@ -4,7 +4,7 @@ var app = express()
   , server = http.createServer(app)
   , io = require('socket.io').listen(server);
   
-var bodyParser = require('body-parser');
+var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
 
 var portNumber = 8080;
@@ -13,7 +13,8 @@ var roomArray = [];
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
-app.use('/static', express.static('public'));
+app.use('/dist', express.static('public/dist'));
+app.use('/public', express.static('public'));
 
 app.get('/', function(req, res){
 	res.render('lobby.ejs', {title: 'hello'});
@@ -35,12 +36,16 @@ var searchRoom = function (id){
 };
 	
 app.get('/room/:room/users', function(req, res){
-	var users = searchRoom(req.param('room')).users;
-	var userlist = [];
-	for(var user in users){
-		userlist.push(user);
+	try {
+		var users = searchRoom(req.param('room')).users;
+		var userlist = [];
+		for(var user in users){
+			userlist.push(user);
+		}
+		res.send( userlist );
+	} catch(e){
+		res.status(404).send('404 not found');
 	}
-	res.send( userlist );
 });
 
 server.listen(portNumber, function(){

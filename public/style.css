@@ -1,0 +1,59 @@
+html, body {
+	padding: 0;
+	margin: 0;
+}
+.canvas-container {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAARCAMAAAA11AaTAAAAD1BMVEUAAADp6enp6enp6en///8uyUgXAAAAA3RSTlMAVamSsHaDAAAAFklEQVQY02NgZmZAAUxMqHxGRoaRBAANPgANgJAOfgAAAABJRU5ErkJggg==);
+}
+canvas {
+	margin:0 auto;
+	padding:0;
+	overflow:hidden;
+	height:100%;
+	min-height:100%;
+	cursor: crosshair;
+	/*border:1px solid #ccc;*/
+	background: transparent;
+}
+
+div#preloader {
+	color: #fff;
+	width: 100%;
+	display: block;
+	z-index: 99999;
+	height: 100%;
+	min-height: 100%;
+	background: #000;
+	position: absolute;
+	text-align: center;
+	padding: 2em;
+	margin: 0;
+	opacity: 0.6;
+	font-size: 3em;
+}
+
+div.chatWrapper {
+	display: block;
+	position: fixed;
+	bottom: 0;
+	padding: 5px 10px;
+	pointer-events:none;
+	color: #000;
+	background-color: rgba(255,255,255,.75);
+	z-index: 9876;
+	opacity: 0.95;
+}
+
+#navigator {
+	border-bottom: 1px solid #ccc;
+}
+
+.nav-pills {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+.nav-pills>li>a {
+	padding: 8px;
+	margin-right: 5px;
+	border-radius: 50%;
+}
