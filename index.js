@@ -25,13 +25,17 @@ app.get('/canvas/:room', function(req, res){
 });
 
 app.get('/room', function(req, res){
-	res.send(JSON.stringify(roomArray));
+	var rooms = Object.keys(roomArray);
+	var roomsInfo = [];
+	for(var i in rooms){
+		var key = rooms[i];
+		roomsInfo.push(roomArray[key]);
+	}
+	res.send(JSON.stringify(roomsInfo));
 });
 
 var searchRoom = function (id){
-	for(var i in roomArray){
-		if(id == roomArray[i].id) return roomArray[i];
-	}
+	if(roomArray[id]) return roomArray[id];
 	return undefined;
 };
 	
@@ -48,9 +52,34 @@ app.get('/room/:room/users', function(req, res){
 	}
 });
 
+app.get('/room/:room', function(req, res){
+	try {
+		var users = searchRoom(req.param('room'));
+		res.send( users );
+	} catch(e){
+		res.status(404).send('404 not found');
+	}
+});
+
 server.listen(portNumber, function(){
 	console.log('Server is listening on port %d', portNumber);
 });
+
+var getUsername = function(socket){
+	if(!socket.username){
+		socket.username = socket.id.substr(3,7);
+	}
+	return socket.username;
+};
+
+// 그림을 그릴 수 있는 지
+var isDrawer = function(socket){
+	try {
+		return getUsername(socket) == socket.room.drawer;
+	} catch(e){
+	}
+	return false;
+};
 
 // 소켓 서버 생성 및 실행
 io.set('log level', 2);
@@ -60,49 +89,73 @@ io.sockets.on('connection', function(socket){
 	socket.on('join', function(data){
 		socket.join(data);
 		
-		if(!socket.username){
-			socket.username = socket.id.substr(3,7);
-		}
+		var username = getUsername(socket);
 		
 		var room = searchRoom(data);
 		// 해당 id의 room이 존재한다면
 		if(!!room){
-			room.users[socket.username] = true;
+			room.users[username] = true;
 			
 			socket.room = room;
 			socket.emit('render canvas', room.capturedImage);
-			socket.emit('connected', socket.username);
+			socket.emit('connected', username);
 			
-			socket.emit('recvMessage', 'SYSTEM', '[' + socket.room.id +']에 입장하였습니다.');
-			socket.broadcast.emit('recvMessage', socket.username, '[' + socket.username +']님이 입장하셨습니다.');
+			socket.emit('recvMessage', 'SYSTEM', '[' + room.id +']에 입장하였습니다.');
+			socket.broadcast.emit('recvMessage', username, '[' + username +']님이 입장하셨습니다.');
 			
-			io.sockets.in(socket.room.id).emit('update userlist', socket.username);
+			io.sockets.in(room.id).emit('update userlist', username);
+			
+			// 방에 아무도 없으면 내가 방장
+			var users = Object.keys(room.users);
+			if( !room.owner || users.length < 2 ){
+				room.owner  = username;
+				room.drawer = username;
+			}
 		}
 	});
 	
 	socket.on('disconnect', function(){
-		if(!socket.username){
-			socket.username = socket.id.substr(3,7);
-		}
+		
+		var username = getUsername(socket);
+		
+		if( !socket.room ) return false;
 		
 		try {
-			delete socket.room.users[socket.username];
+			delete socket.room.users[username];
 		} catch(e){
 			console.log(e);
 		}
 		
-		socket.broadcast.emit('recvMessage', socket.username, '[' + socket.username +']님이 퇴장하셨습니다.');
+		var users = Object.keys(socket.room.users);
 		
-		try {
-			io.sockets.in(socket.room.id).emit('update userlist');
-		} catch(e){
-			console.log(e);
+		socket.leave(socket.room.id);
+		
+		if( users.length < 1 ){
+			// 모든 유저가 나갔음 (방이 비었다)
+			socket.emit('exit room');
+			delete roomArray[socket.room.id];
+			delete socket.room;
+			
+			return true;
+		}
+		
+		socket.broadcast.emit('recvMessage', username, '[' + username +']님이 퇴장하셨습니다.');
+		
+		io.sockets.in(socket.room.id).emit('update userlist');
+		
+		// 나가려는 사람이 방장이면
+		if( socket.room.owner == username ){
+			// 방장을 인계함
+			socket.room.owner = users[0];
+			socket.room.drawer = users[0];
 		}
 	})
 	
 	// room 이벤트
 	socket.on('send line', function(data){
-		io.sockets.in(socket.room.id).emit('draw line', data);
+		if( isDrawer(socket) ){
+			io.sockets.in(socket.room.id).emit('draw line', data);
+		}
 	});
 	
 	socket.on('save canvas', function(image){
@@ -128,11 +181,15 @@ io.sockets.on('connection', function(socket){
 	socket.on('addroom', function(data){
 		var el = {
 			id: data,
+			owner: '',
+			drawer: '',
+			gameState: 'wait',
+			password: '',
 			users: [],
 			capturedImage: '',
 			createdAt: new Date()
 		};
-		roomArray.push(el);
+		roomArray[data] = el;
 		io.sockets.emit('addroom', data);
 	});
 	
@@ -140,4 +197,8 @@ io.sockets.on('connection', function(socket){
 	socket.on('sendMessage', function(content){
 		io.sockets.in(socket.room.id).emit('recvMessage', socket.username, content);
 	});
+	
+	// socket.on('game start', 
+	////////////////// 그림을 그릴 수 있는 권한을 넘긴다. ///////////////////
+	
 });
