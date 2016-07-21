@@ -6,10 +6,11 @@ var app = express()
   
 var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
+var container = require('./container');
 
 var portNumber = 8080;
 
-var roomArray = [];
+var roomContainer = container();
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -25,23 +26,12 @@ app.get('/canvas/:room', function(req, res){
 });
 
 app.get('/room', function(req, res){
-	var rooms = Object.keys(roomArray);
-	var roomsInfo = [];
-	for(var i in rooms){
-		var key = rooms[i];
-		roomsInfo.push(roomArray[key]);
-	}
-	res.send(JSON.stringify(roomsInfo));
+	res.send(JSON.stringify(roomContainer.list()));
 });
 
-var searchRoom = function (id){
-	if(roomArray[id]) return roomArray[id];
-	return undefined;
-};
-	
 app.get('/room/:room/users', function(req, res){
 	try {
-		var room = searchRoom(req.param('room'));
+		var room = roomContainer.find(req.param('room'));
 		var userlist = [];
 		for(var user in room.users){
 			userlist.push({
@@ -57,7 +47,7 @@ app.get('/room/:room/users', function(req, res){
 
 app.get('/room/:room', function(req, res){
 	try {
-		var users = searchRoom(req.param('room'));
+		var users = roomContainer.find(req.param('room'));
 		res.send( users );
 	} catch(e){
 		res.status(404).send('404 not found');
@@ -124,7 +114,7 @@ io.sockets.on('connection', function(socket){
 		
 		var username = user.getUsername();
 		
-		var room = searchRoom(data);
+		var room = roomContainer.find(data);
 		// 해당 id의 room이 존재한다면
 		if(!!room){
 			room.users[username] = true;
@@ -170,7 +160,7 @@ io.sockets.on('connection', function(socket){
 				if( users.length < 1 ){
 					// 모든 유저가 나갔음 (방이 비었다)
 					socket.emit('exit room');
-					delete roomArray[socket.room.id];
+					roomContainer.remove(socket.room.id);
 					delete socket.room;
 					
 					return true;
@@ -228,7 +218,7 @@ io.sockets.on('connection', function(socket){
 			capturedImage: '',
 			createdAt: new Date()
 		};
-		roomArray[data] = el;
+		roomContainer.add(el);
 		io.sockets.emit('addroom', data);
 	});
 	
