@@ -23,6 +23,16 @@ function room(id, socketio) {
     this.createdAt = new Date();
 };
 
+room.prototype.publicData = function publicData() {
+    return {
+        id: this.id,
+        state: this.state,
+        owner: this.owner,
+        users: this.users,
+        createdAt: this.createdAt
+    };
+};
+
 room.prototype.draw = function draw(drawer, data) {
     if(drawer == this.drawer){
         this.io.sockets.in(this.id).emit('draw line', data);
@@ -77,10 +87,11 @@ room.prototype.update = function update(){
     // 상태를 점검하여 변수들을 조정함
     
     // 사람이 아무도 없다면 방의 상태를 변경한다
-    if( this.userlist().length ){
+    if( this.userlist().length < 1 ){
         this.state = 'empty';
         return;
     }
+    this.state = 'wait';
     
     // 방장이 없다면(나간 상태) 남은 다음 사람이 인계함
     if( ! this.users[this.owner] ){

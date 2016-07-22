@@ -30,6 +30,15 @@ app.get('/room', function(req, res){
 	res.send(JSON.stringify(roomContainer.list()));
 });
 
+app.get('/room/:room', function(req, res){
+	try {
+		var room = roomContainer.find(req.param('room')).publicData();
+		res.send( JSON.stringify(room) );
+	} catch(e){
+		res.status(404).send('404 not found');
+	}
+});
+
 app.get('/room/:room/users', function(req, res){
 	try {
 		var room = roomContainer.find(req.param('room'));
@@ -41,16 +50,6 @@ app.get('/room/:room/users', function(req, res){
 			});
 		}
 		res.send( userlist );
-	} catch(e){
-		res.status(404).send('404 not found');
-	}
-});
-
-app.get('/room/:room', function(req, res){
-	try {
-		var room = roomContainer.find(req.param('room'));
-		console.log( JSON.stringify(room));
-		res.send( JSON.stringify(room) );
 	} catch(e){
 		res.status(404).send('404 not found');
 	}
