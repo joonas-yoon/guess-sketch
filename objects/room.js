@@ -42,13 +42,13 @@ room.prototype.draw = function draw(drawer, data) {
 };
 
 room.prototype.saveImage = function saveImage(image) {
-	this.capturedImage = image;
+    this.capturedImage = image;
 };
 
 room.prototype.echo = function echo(socket, type, username, message) {
     if(type == 'chat'){
         // 일반적인 채팅
-        if( username == this.drawer ){
+        if( this.state == 'gaming' && username == this.drawer ){
             // 그리는 사람은 대화를 할 수 없다.
             this.echo(socket, 'system', '시스템', '[그림을 그리는 동안은 대화를 할 수 없습니다.]');
         } else {
@@ -71,6 +71,8 @@ room.prototype.echo = function echo(socket, type, username, message) {
 
 room.prototype.join = function join(socket, user_id) {
     this.users[user_id] = true;
+    socket.emit('render canvas', this.capturedImage);
+    socket.emit('connected', user_id);
     this.echo(socket, 'system', '시스템', '[' + this.id +']방에 입장하였습니다.');
     this.echo(socket, 'broadcast', '알림', '[' + user_id +']님이 입장하셨습니다.');
     this.update();
@@ -98,9 +100,11 @@ room.prototype.update = function update(){
         this.owner = this.nextUser(this.owner);
     }
     
-    // 그림 그리는 사람도 변경해줌
-    if( ! this.users[this.drawer] ){
-        this.drawer = this.nextUser(this.drawer);
+    if(this.state == 'gaming'){
+        // 그림 그리는 사람도 변경해줌
+        if( ! this.users[this.drawer] ){
+            this.drawer = this.nextUser(this.drawer);
+        }
     }
 };
 

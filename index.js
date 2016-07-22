@@ -46,7 +46,8 @@ app.get('/room/:room/users', function(req, res){
 		for(var user in room.users){
 			userlist.push({
 				id: user,
-				drawer: room.drawer == user
+				drawer: room.drawer == user,
+				owner: room.owner == user
 			});
 		}
 		res.send( userlist );
@@ -118,20 +119,8 @@ io.sockets.on('connection', function(socket){
 		// 해당 id의 room이 존재한다면
 		if(!!room){
 			room.join(socket, username);
-			
 			user.disconnected = false;
-			
-			socket.emit('render canvas', room.capturedImage);
-			socket.emit('connected', username);
-			
-			io.sockets.in(room.id).emit('update userlist', username);
-			
-			// 방에 아무도 없으면 내가 방장
-			var users = Object.keys(room.users);
-			if( !room.owner || users.length < 2 ){
-				room.owner  = username;
-				room.drawer = username;
-			}
+			io.sockets.in(room.id).emit('update userlist');
 		}
 	});
 	

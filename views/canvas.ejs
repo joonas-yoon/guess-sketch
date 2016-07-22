@@ -29,7 +29,6 @@
 	
 	<script src="/socket.io/socket.io.js"></script>
 	<script type="text/javascript">
-	
 		function resizeCanvas(canvas, socket){
 			var offset = 10;
 			canvas.width = window.innerWidth - offset;
@@ -197,15 +196,37 @@
 						var u = $('<a href="#"></a>')
 							.attr({class: 'dropdown-toggle', 'data-toggle':'dropdown'})
 							.html('<img src="https://x1.xingassets.com/assets/frontend_minified/img/users/nobody_m.original.jpg" class="img-rounded img-sm" />');
+						
+						var itsme = item.id == $("#chatUsername")[0].innerText;
 						var li = $('<li class="dropdown"></li>').attr({
 							'data-user': item.id
-						}).html(u).append('<ul class="dropdown-menu"><li><a href="#">@' + item.id + '</a></li></ul>').appendTo(userlist);
+						}).html(u);
 						
-						if(item.id == $("#chatUsername")[0].innerText) li.addClass('active');
+						var dropdowns = '';
+						dropdowns += '<ul class="dropdown-menu">';
+						
+						if(item.owner == true){
+							li.addClass('owner');
+							dropdowns += '<li class="dropdown-header">방장</li>';
+						}
+						
 						if(item.drawer === true){
 							li.addClass('drawing');
+							dropdowns += '<li class="dropdown-header">출제자</li>';
 							u.attr({'data-draw': 'true'}).tooltip({title:'그림',placement:'bottom',trigger:'hover'}).tooltip('show');
 						}
+						
+						if(itsme){
+							li.addClass('its-me');
+							dropdowns += '<li class="dropdown-header">@' + item.id + ' (나)</li>';
+						} else {
+							dropdowns += '<li class="dropdown-header">@' + item.id + '</li>';
+						}
+						
+						dropdowns += '<li><a href="/">방 나가기</a></li>';
+						dropdowns += '</ul>';
+						li.append(dropdowns);
+						li.appendTo(userlist);
 					});
 				});
 			};

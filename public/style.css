@@ -63,8 +63,13 @@ div.chatWrapper {
 	transition: background-color 0.5s ease-in-out;
 }
 .nav-pills>li.drawing>a {
-	color: #fff;
-	background-color: #ED5565;
+	color: #fff; background-color: #ED5565;
+}
+.nav-pills>li.its-me>a {
+	color: #fff; background-color: #e0e0e0;
+}
+.nav-pills>li.owner>a {
+	color: #fff; background-color: #74c274;
 }
 #gameinfobar {
 	margin:0;
