@@ -66,3 +66,19 @@ div.chatWrapper {
 	color: #fff;
 	background-color: #ED5565;
 }
+#gameinfobar {
+	margin:0;
+	padding: 5px;
+	color: #fff;
+	background: #666;
+}
+#gameinfobar .progress {
+	margin-bottom: 0;
+	background-color: rgba(255,255,255,.75);
+}
+#gameinfobar .progress>.progress-bar {
+	float: right;
+}
+#gameinfobar>#wordBox {
+	text-align: center;
+}
