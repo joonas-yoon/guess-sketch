@@ -78,13 +78,17 @@ io.sockets.on('connection', function(socket){
 	var timer = {
 		runningTime: 60 * 1000,
 		time: 0,
+		isRunning: false,
 		tick: 500 /*ms*/,
 		init: function(customRunningTime){
 			if(!!customRunningTime) this.runningTime = customRunningTime;
 			this.time = this.runningTime;
+			this.isRunning = false;
 		},
 		start: function(loopEvent, endEvent){
+			if(this.isRunning != false) return false;
 			this.init();
+			this.isRunning = true;
 			socket.timer_endEvent = endEvent;
 			var stop = this.stop
 			  , time = this.time
@@ -100,6 +104,7 @@ io.sockets.on('connection', function(socket){
 		},
 		stop: function(){
 			clearInterval(socket.timer_stepper);
+			this.isRunning = false;
 			try {
 				socket.timer_endEvent();
 			}catch(e){}
@@ -121,6 +126,16 @@ io.sockets.on('connection', function(socket){
 			room.join(socket, username);
 			user.disconnected = false;
 			io.sockets.in(room.id).emit('update userlist');
+			
+			if(room.state == 'wait'){
+				console.log(username, room.owner);
+				if(username == room.owner){
+					socket.emit('init game owner');
+					socket.broadcast.to(room.id).emit('init game');
+				} else {
+					socket.emit('init game');
+				}
+			}
 		}
 	});
 	

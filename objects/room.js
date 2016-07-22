@@ -72,7 +72,7 @@ room.prototype.echo = function echo(socket, type, username, message) {
 room.prototype.join = function join(socket, user_id) {
     this.users[user_id] = true;
     socket.emit('render canvas', this.capturedImage);
-    socket.emit('connected', user_id);
+    socket.emit('connected', user_id, user_id);
     this.echo(socket, 'system', '시스템', '[' + this.id +']방에 입장하였습니다.');
     this.echo(socket, 'broadcast', '알림', '[' + user_id +']님이 입장하셨습니다.');
     this.update();
