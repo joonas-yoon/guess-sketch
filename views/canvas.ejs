@@ -244,6 +244,20 @@
 			socket.on('init game', function(){
 				$("#wordBox").text('게임 시작을 기다리는 중...');
 			});
+			socket.on('update timer tick', function(curTime, totTime){
+				var sec = curTime/1000;
+				var str = '종료까지 ' + parseInt(sec/60) +'분 '+ (sec%60).toFixed(2) +'초';
+				var percent = (curTime / totTime * 100);
+				console.log(str, percent);
+				if(percent <= 50.0){
+					$("#gameTimerbar>.progress-bar").text('');
+					$("#gameTimerbar>.left-pad").text(str);
+				} else {
+					$("#gameTimerbar>.progress-bar").text(str);
+					$("#gameTimerbar>.left-pad").text('');
+				}
+				$("#gameTimerbar>.progress-bar").css('width', (curTime / totTime * 100) +'%');
+			});
 		});
 	</script>
 </head>
@@ -263,10 +277,11 @@
 				게임 시작을 기다리는 중
 			</div>
 			<div class="col-sm-8 col-xs-4">
-				<div class="progress progress-striped active">
+				<div class="progress progress-striped active" id="gameTimerbar">
 					<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-						00:00
+						종료까지 0분 0초
 					</div>
+					<div class="left-pad"></div>
 				</div>
 			</div>
 		</div>

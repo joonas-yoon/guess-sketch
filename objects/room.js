@@ -17,7 +17,7 @@ function room(id, socketio) {
     this.capturedImage = '';
     this.owner = '';
     this.drawer = '';
-    this.users = []; // user들의 id만 저장함
+    this.users = []; // user들의 id => socket_id 형태로 저장함
     
     this.capturedImage = '';
     this.createdAt = new Date();
@@ -70,22 +70,22 @@ room.prototype.echo = function echo(socket, type, username, message) {
 };
 
 room.prototype.join = function join(socket, user_id) {
-    this.users[user_id] = true;
+    this.users[user_id] = socket.id;
     socket.emit('render canvas', this.capturedImage);
     socket.emit('connected', user_id, user_id);
     this.echo(socket, 'system', '시스템', '[' + this.id +']방에 입장하였습니다.');
     this.echo(socket, 'broadcast', '알림', '[' + user_id +']님이 입장하셨습니다.');
-    this.update();
+    this.update(socket, user_id);
 };
 
 room.prototype.kick = function kick(socket, user_id) {
     delete this.users[user_id];
     this.echo(socket, 'broadcast', '알림', '[' + user_id +']님이 퇴장하셨습니다.');
-    this.update();
+    this.update(socket, user_id);
     return this.userlist().length;
 };
 
-room.prototype.update = function update(){
+room.prototype.update = function update(socket, user_id){
     // 상태를 점검하여 변수들을 조정함
     
     // 사람이 아무도 없다면 방의 상태를 변경한다
@@ -105,6 +105,13 @@ room.prototype.update = function update(){
         if( ! this.users[this.drawer] ){
             this.drawer = this.nextUser(this.drawer);
         }
+    }
+    
+    // 게임 대기중일때는
+    if(this.state == 'wait'){
+        // 방장에게 게임 시작 버튼 부여
+        console.log('방장에게 업데이트 보냄');
+        this.io.to(this.users[this.owner]).emit('init game owner');
     }
 };
 

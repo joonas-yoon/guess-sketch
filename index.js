@@ -8,6 +8,7 @@ var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
 var Container = require('./objects/container.js');
 var Room = require('./objects/room.js');
+var Stopwatch = require('timer-stopwatch');
 
 var portNumber = 8080;
 
@@ -61,7 +62,6 @@ server.listen(portNumber, function(){
 });
 
 // 소켓 서버 생성 및 실행
-io.set('log level', 2);
 io.sockets.on('connection', function(socket){
 	
 	var user = {
@@ -75,43 +75,14 @@ io.sockets.on('connection', function(socket){
 		}
 	};
 	
-	var timer = {
-		runningTime: 60 * 1000,
-		time: 0,
-		isRunning: false,
-		tick: 500 /*ms*/,
-		init: function(customRunningTime){
-			if(!!customRunningTime) this.runningTime = customRunningTime;
-			this.time = this.runningTime;
-			this.isRunning = false;
-		},
-		start: function(loopEvent, endEvent){
-			if(this.isRunning != false) return false;
-			this.init();
-			this.isRunning = true;
-			socket.timer_endEvent = endEvent;
-			var stop = this.stop
-			  , time = this.time
-			  , tick = this.tick;
-			socket.timer_stepper = setInterval(function(){
-				if(time <= 0){
-					stop();
-				} else {
-					loopEvent(time);
-					time -= tick;
-				}
-			}, this.tick);
-		},
-		stop: function(){
-			clearInterval(socket.timer_stepper);
-			this.isRunning = false;
-			try {
-				socket.timer_endEvent();
-			}catch(e){}
-		}
-	};
-	
 	var room = null;
+
+	var game_timer_fulltime = 60 * 1000;
+	var game_timer_options = {
+		refreshRateMS: 90,      // How often the clock should be updated
+		almostDoneMS: 10000,     // When counting down - this event will fire with this many milliseconds remaining on the clock
+	}
+	var game_timer = new Stopwatch(60 * 1000, game_timer_options);
 
 	// join 이벤트
 	socket.on('join', function(id){
@@ -127,15 +98,14 @@ io.sockets.on('connection', function(socket){
 			user.disconnected = false;
 			io.sockets.in(room.id).emit('update userlist');
 			
-			if(room.state == 'wait'){
-				console.log(username, room.owner);
-				if(username == room.owner){
-					socket.emit('init game owner');
-					socket.broadcast.to(room.id).emit('init game');
-				} else {
-					socket.emit('init game');
-				}
-			}
+			game_timer.onTime(function(time) {
+				io.sockets.in(room.id).emit('update timer tick', time.ms, game_timer_fulltime);
+				room.state = 'gaming';
+				console.log('게임 진행....', time.ms);
+			}).onDone(function(time) {
+				console.log('게임 종료');
+				room.state = 'wait';
+			});
 		}
 	});
 	
@@ -203,12 +173,14 @@ io.sockets.on('connection', function(socket){
 	});
 	
 	socket.on('start game', function(){
-		timer.init(5 * 1000);
-		timer.start(function(time){
-			console.log('진행중....' + time);
-		}, function(){
-			console.log('종료');
-		});
+		console.log(game_timer, room.state);
+		if( game_timer.state != 1 && room.state != 'gaming' ){
+			game_timer.reset(game_timer_fulltime);
+			io.sockets.in(room.id).emit('update timer tick', game_timer_fulltime, game_timer_fulltime);
+			game_timer.start();
+		} else {
+			console.log('게임 시작 불가');
+		}
 	});
 	////////////////// 그림을 그릴 수 있는 권한을 넘긴다. ///////////////////
 	
